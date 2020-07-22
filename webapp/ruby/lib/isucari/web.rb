@@ -92,7 +92,7 @@ module Isucari
       end
 
       def get_category_by_id(category_id)
-        category = db.xquery('SELECT * FROM `categories` WHERE `id` = ?', category_id).first
+        category = @@categories_indexed_by_id[category_id]
 
         return if category.nil?
 
@@ -141,13 +141,14 @@ module Isucari
       end
 
       def set_categories
-        CATEGORIES ||= begin
-          db.xquery('SELECT * FROM `categories`').to_a
+        @@categories = db.xquery('SELECT * FROM `categories`').to_a
+
+        @@categories_indexed_by_id = {}
+        @@categories.each do |row|
+          @@categories_indexed_by_id[row['id']] = row
         end
       end
     end
-
-    CATEGORIES = nil
 
     # API
 
@@ -1149,7 +1150,7 @@ module Isucari
       response['user'] = user unless user.nil?
       response['payment_service_url'] = get_payment_service_url
 
-      response['categories'] = CATEGORIES
+      response['categories'] = @@categories
 
       response.to_json
     end
