@@ -217,8 +217,8 @@ module Isucari
         category = get_category_by_id(item['category_id'])
         halt_with_error 404, 'category not found' if category.nil?
 
-        h = begin
-          {
+        begin
+          h = {
             'id' => item['id'],
             'seller_id' => item['seller_id'],
             'seller' => seller,
@@ -277,23 +277,18 @@ module Isucari
         category = get_category_by_id(item['category_id'])
         halt_with_error 404, 'category not found' if category.nil?
 
-        h = begin
-          {
-            'id' => item['id'],
-            'seller_id' => item['seller_id'],
-            'seller' => seller,
-            'status' => item['status'],
-            'name' => item['name'],
-            'price' => item['price'],
-            'image_url' => get_image_url(item['image_name']),
-            'category_id' => item['category_id'],
-            'category' => category,
-            'created_at' => item['created_at'].to_i
-          }
-        rescue => e
-          halt_with_error 500, "#{e.message}, #{e.backtrace}"
-        end
-        h
+        {
+          'id' => item['id'],
+          'seller_id' => item['seller_id'],
+          'seller' => seller,
+          'status' => item['status'],
+          'name' => item['name'],
+          'price' => item['price'],
+          'image_url' => get_image_url(item['image_name']),
+          'category_id' => item['category_id'],
+          'category' => category,
+          'created_at' => item['created_at'].to_i
+        }
       end
 
       has_next = false
