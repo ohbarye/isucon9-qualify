@@ -90,5 +90,24 @@ module Isucari
 
       JSON.parse(res.body)
     end
+
+    def shipment_status_get(shipment_url, param)
+      uri = URI.parse("#{shipment_url}/status?#{URI.encode_www_form(param)}")
+
+      req = Net::HTTP::Get.new(uri.path)
+      req['Content-Type'] = 'application/json'
+      req['User-Agent'] = @user_agent
+      req['Authorization'] = ISUCARI_API_TOKEN
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      res = http.start { http.request(req) }
+
+      if res.code != '200'
+        raise Error, "status code #{res.code}; body #{res.body}"
+      end
+
+      JSON.parse(res.body)
+    end
   end
 end
