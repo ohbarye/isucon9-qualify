@@ -139,7 +139,15 @@ module Isucari
       def halt_with_error(status = 500, error = 'unknown')
         halt status, { 'error' => error }.to_json
       end
+
+      def set_categories
+        CATEGORIES ||= begin
+          db.xquery('SELECT * FROM `categories`').to_a
+        end
+      end
     end
+
+    CATEGORIES = nil
 
     # API
 
@@ -163,6 +171,8 @@ module Isucari
         # 実装言語を返す
         'language' => 'ruby',
       }
+
+      set_categories
 
       response.to_json
     end
@@ -1139,8 +1149,7 @@ module Isucari
       response['user'] = user unless user.nil?
       response['payment_service_url'] = get_payment_service_url
 
-      categories = db.xquery('SELECT * FROM `categories`').to_a
-      response['categories'] = categories
+      response['categories'] = CATEGORIES
 
       response.to_json
     end
