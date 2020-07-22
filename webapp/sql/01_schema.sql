@@ -74,5 +74,6 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
 CREATE INDEX created_at ON items (created_at);
-CREATE INDEX seller_id ON items (seller_id);
-CREATE INDEX buyer_id ON items (buyer_id);
+CREATE INDEX seller_id ON items (seller_id, created_at);
+CREATE INDEX buyer_id ON items (buyer_id, created_at);
+CREATE INDEX category_id ON items (category_id, created_at);
