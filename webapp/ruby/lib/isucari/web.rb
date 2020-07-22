@@ -91,6 +91,19 @@ module Isucari
         }
       end
 
+      def users_indexed_by_id(user_ids)
+        users = db.xquery("SELECT * FROM `users` WHERE `id` IN (#{user_ids.join(', ')})")
+        h = {}
+        users.map do |user|
+          h[user['id']] = {
+            'id' => user['id'],
+            'account_name' => user['account_name'],
+            'num_sell_items' => user['num_sell_items']
+          }
+        end
+        h
+      end
+
       def get_category_by_id(category_id)
         category = @@categories_indexed_by_id[category_id]
 
@@ -191,9 +204,11 @@ module Isucari
         db.xquery("SELECT * FROM `items` WHERE `status` IN (?, ?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{ITEMS_PER_PAGE + 1}", ITEM_STATUS_ON_SALE, ITEM_STATUS_SOLD_OUT)
       end
 
+      map = users_indexed_by_id(items.map{|row| row['seller_id']})
+
       # TODO N+1
       item_simples = items.map do |item|
-        seller = get_user_simple_by_id(item['seller_id'])
+        seller = map[item['seller_id']]
         halt_with_error 404, 'seller not found' if seller.nil?
 
         category = get_category_by_id(item['category_id'])
@@ -246,9 +261,11 @@ module Isucari
         db.xquery("SELECT * FROM `items` WHERE `status` IN (?,?) AND category_id IN (?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{ITEMS_PER_PAGE + 1}", ITEM_STATUS_ON_SALE, ITEM_STATUS_SOLD_OUT, category_ids)
       end
 
+      map = users_indexed_by_id(items.map{|row| row['seller_id']})
+
       # TODO N+1
       item_simples = items.map do |item|
-        seller = get_user_simple_by_id(item['seller_id'])
+        seller = map[item['seller_id']]
         halt_with_error 404, 'seller not found' if seller.nil?
 
         category = get_category_by_id(item['category_id'])
@@ -310,9 +327,11 @@ module Isucari
         end
       end
 
+      map = users_indexed_by_id(items.map{|row| row['seller_id']})
+
       # TODO N+1
       item_details = items.map do |item|
-        seller = get_user_simple_by_id(item['seller_id'])
+        seller = map[item['seller_id']]
         if seller.nil?
           db.query('ROLLBACK')
           halt_with_error 404, 'seller not found'
