@@ -402,22 +402,14 @@ module Isucari
         db.xquery("SELECT * FROM `items` WHERE `seller_id` = ? AND `status` IN (?, ?, ?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{ITEMS_PER_PAGE + 1}", user_simple['id'], ITEM_STATUS_ON_SALE, ITEM_STATUS_TRADING, ITEM_STATUS_SOLD_OUT)
       end
 
-      sellers = {}
-      db.xquery("SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (#{items.map{|row| row['seller_id']}.join(", ") })").each do |row|
-        sellers[row['id']] = row
-      end
-
       item_simples = items.map do |item|
-        seller = sellers[item['seller_id']]
-        halt_with_error 404, 'seller not found' if seller.nil?
-
         category = get_category_by_id(item['category_id'])
         halt_with_error 404, 'category not found' if category.nil?
 
         {
           'id' => item['id'],
           'seller_id' => item['seller_id'],
-          'seller' => seller,
+          'seller' => user_simple,
           'status' => item['status'],
           'name' => item['name'],
           'price' => item['price'],
