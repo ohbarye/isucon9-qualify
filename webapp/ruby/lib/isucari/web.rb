@@ -329,6 +329,11 @@ module Isucari
 
       map = users_indexed_by_id(items.map{|row| row['seller_id']})
 
+      te_map = {}
+      db.xquery("SELECT * FROM `transaction_evidences` WHERE `item_id` IN (#{items.map{|r| r['id']}.join(',')})").each do |row|
+        te_map[row['item_id']] = row
+      end
+
       # TODO N+1
       item_details = items.map do |item|
         seller = map[item['seller_id']]
@@ -373,7 +378,7 @@ module Isucari
           item_detail['buyer'] = buyer
         end
 
-        transaction_evidence = db.xquery('SELECT * FROM `transaction_evidences` WHERE `item_id` = ?', item['id']).first
+        transaction_evidence = te_map[item['id']]
         unless transaction_evidence.nil?
           shipping = db.xquery('SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?', transaction_evidence['id']).first
           if shipping.nil?
