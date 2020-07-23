@@ -621,15 +621,6 @@ module Isucari
       end
 
       begin
-        db.xquery('INSERT INTO `transaction_evidences` (`seller_id`, `buyer_id`, `status`, `item_id`, `item_name`, `item_price`, `item_description`,`item_category_id`,`item_root_category_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', target_item['seller_id'], buyer['id'], TRANSACTION_EVIDENCE_STATUS_WAIT_SHIPPING, target_item['id'], target_item['name'], target_item['price'], target_item['description'], category['id'], category['parent_id'])
-      rescue
-        db.query('ROLLBACK')
-        halt_with_error 500, 'db error'
-      end
-
-      transaction_evidence_id = db.last_id
-
-      begin
         db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_TRADING, Time.now, target_item['id'])
       rescue
         db.query('ROLLBACK')
@@ -639,6 +630,16 @@ module Isucari
       db.query('COMMIT')
 
       db.query('BEGIN')
+
+      begin
+        db.xquery('INSERT INTO `transaction_evidences` (`seller_id`, `buyer_id`, `status`, `item_id`, `item_name`, `item_price`, `item_description`,`item_category_id`,`item_root_category_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', target_item['seller_id'], buyer['id'], TRANSACTION_EVIDENCE_STATUS_WAIT_SHIPPING, target_item['id'], target_item['name'], target_item['price'], target_item['description'], category['id'], category['parent_id'])
+      rescue
+        db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
+        halt_with_error 500, 'db error'
+      end
+
+      transaction_evidence_id = db.last_id
 
       begin
         scr = api_client.shipment_create(get_shipment_service_url, to_address: buyer['address'], to_name: buyer['account_name'], from_address: seller['address'], from_name: seller['account_name'])
