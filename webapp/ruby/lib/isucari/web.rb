@@ -492,7 +492,7 @@ module Isucari
         item_detail['buyer_id'] = item['buyer_id']
         item_detail['buyer'] = buyer
 
-        transaction_evidence = db.xquery('SELECT te.*, s.status as shipping_status FROM `transaction_evidences` te LEFT OUTER JOIN `shippings` s ON te.id = s.transaction_evidence_id WHERE `item_id` = ?', item['id']).first
+        transaction_evidence = db.xquery('SELECT te.*, s.status as shipping_status FROM `transaction_evidences` te LEFT OUTER JOIN `shippings` s ON te.id = s.transaction_evidence_id WHERE te.`item_id` = ?', item['id']).first
         unless transaction_evidence.nil?
           if transaction_evidence['shipping_status'].nil?
             halt_with_error 404, 'shipping not found'
