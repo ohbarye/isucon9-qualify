@@ -30,7 +30,11 @@ CREATE TABLE `items` (
   `category_id` int unsigned NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_category_id (`category_id`)
+  INDEX idx_category_id (`category_id`),
+  INDEX idx_created_at (`created_at`),
+  INDEX idx_seller_id_created_at (seller_id, created_at),
+  INDEX idx_category_id_created_at (category_id, created_at),
+  INDEX idx_buyer_id_created_at (buyer_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
 DROP TABLE IF EXISTS `transaction_evidences`;
@@ -72,8 +76,3 @@ CREATE TABLE `categories` (
   `parent_id` int unsigned NOT NULL,
   `category_name` varchar(191) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
-
-CREATE INDEX created_at ON items (created_at);
-CREATE INDEX seller_id ON items (seller_id, created_at);
-CREATE INDEX buyer_id ON items (buyer_id, created_at);
-CREATE INDEX category_id ON items (category_id, created_at);
