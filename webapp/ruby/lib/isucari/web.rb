@@ -318,7 +318,7 @@ module Isucari
       else
         # 1st page
         begin
-          db.xquery("SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{TRANSACTIONS_PER_PAGE + 1}", user['id'], user['id'])
+          db.xquery("(SELECT * FROM `items` WHERE `seller_id` = ?) UNION (SELECT * FROM `items` WHERE `buyer_id` = ?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{TRANSACTIONS_PER_PAGE + 1}", user['id'], user['id'])
         rescue
           db.query('ROLLBACK')
           halt_with_error 500, 'db error'
