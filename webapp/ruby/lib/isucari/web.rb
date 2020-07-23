@@ -457,14 +457,18 @@ module Isucari
 
       user = get_user
 
-      item = db.xquery('SELECT * FROM `items` WHERE `id` = ?', item_id).first
+      item = db.xquery('SELECT i.*, seller.account_name AS seller_account_name, seller.num_sell_items AS seller_num_sell_items, buyer.account_name AS buyer_account_name, buyer.num_sell_items AS buyer_num_sell_items FROM `items` i LEFT OUTER JOIN users seller ON i.seller_id = seller.id LEFT OUTER JOIN users buyer ON i.buyer_id = buyer.id WHERE i.`id` = 1;', item_id).first
       halt_with_error 404, 'item not found' if item.nil?
 
       category = get_category_by_id(item['category_id'])
       halt_with_error 404, 'category not found' if category.nil?
 
-      seller = get_user_simple_by_id(item['seller_id'])
-      halt_with_error 404, 'seller not found' if seller.nil?
+      halt_with_error 404, 'seller not found' if item['seller_account_name'].nil?
+      seller = {
+        'id' => item['seller_id'],
+        'account_name' => item['seller_account_name'],
+        'num_sell_items' => item['seller_num_sell_items']
+      }
 
       item_detail = {
         'id' => item['id'],
@@ -486,8 +490,12 @@ module Isucari
       }
 
       if (user['id'] == item['seller_id'] || user['id'] == item['buyer_id']) && item['buyer_id'] != 0
-        buyer = get_user_simple_by_id(item['buyer_id'])
-        halt_with_error 404, 'buyer not found' if buyer.nil?
+        halt_with_error 404, 'buyer not found' if item['buyer_account_name'].nil?
+        buyer = {
+          'id' => item['buyer_id'],
+          'account_name' => item['buyer_account_name'],
+          'num_sell_items' => item['buyer_num_sell_items']
+        }
 
         item_detail['buyer_id'] = item['buyer_id']
         item_detail['buyer'] = buyer
