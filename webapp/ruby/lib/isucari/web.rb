@@ -206,7 +206,6 @@ module Isucari
 
       map = users_indexed_by_id(items.map{|row| row['seller_id']})
 
-      # TODO N+1
       item_simples = items.map do |item|
         seller = map[item['seller_id']]
         halt_with_error 404, 'seller not found' if seller.nil?
@@ -263,7 +262,6 @@ module Isucari
 
       map = users_indexed_by_id(items.map{|row| row['seller_id']})
 
-      # TODO N+1
       item_simples = items.map do |item|
         seller = map[item['seller_id']]
         halt_with_error 404, 'seller not found' if seller.nil?
@@ -334,7 +332,6 @@ module Isucari
         te_map[row['item_id']] = row
       end
 
-      # TODO N+1
       item_details = items.map do |item|
         seller = map[item['seller_id']]
         if seller.nil?
