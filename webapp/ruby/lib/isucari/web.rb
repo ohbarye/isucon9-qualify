@@ -636,10 +636,15 @@ module Isucari
         halt_with_error 500, 'db error'
       end
 
+      db.query('COMMIT')
+
+      db.query('BEGIN')
+
       begin
         scr = api_client.shipment_create(get_shipment_service_url, to_address: buyer['address'], to_name: buyer['account_name'], from_address: seller['address'], from_name: seller['account_name'])
       rescue
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 500, 'failed to request to shipment service'
       end
 
@@ -647,21 +652,25 @@ module Isucari
         pstr = api_client.payment_token(get_payment_service_url, shop_id: PAYMENT_SERVICE_ISUCARI_SHOPID, token: token, api_key: PAYMENT_SERVICE_ISUCARI_APIKEY, price: target_item['price'])
       rescue
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 500, 'payment service is failed'
       end
 
       if pstr['status'] == 'invalid'
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 400, 'カード情報に誤りがあります'
       end
 
       if pstr['status'] == 'fail'
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 400, 'カードの残高が足りません'
       end
 
       if pstr['status'] != 'ok'
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 400, '想定外のエラー'
       end
 
@@ -669,6 +678,7 @@ module Isucari
         db.xquery('INSERT INTO `shippings` (`transaction_evidence_id`, `status`, `item_name`, `item_id`, `reserve_id`, `reserve_time`, `to_address`, `to_name`, `from_address`, `from_name`, `img_binary`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', transaction_evidence_id, SHIPPINGS_STATUS_INITIAL, target_item['name'], target_item['id'], scr['reserve_id'], scr['reserve_time'], buyer['address'], buyer['account_name'], seller['address'], seller['account_name'], '')
       rescue
         db.query('ROLLBACK')
+        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
         halt_with_error 500, 'db error'
       end
 
