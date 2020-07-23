@@ -457,7 +457,7 @@ module Isucari
 
       user = get_user
 
-      item = db.xquery('SELECT i.*, seller.account_name AS seller_account_name, seller.num_sell_items AS seller_num_sell_items, buyer.account_name AS buyer_account_name, buyer.num_sell_items AS buyer_num_sell_items FROM `items` i LEFT OUTER JOIN users seller ON i.seller_id = seller.id LEFT OUTER JOIN users buyer ON i.buyer_id = buyer.id WHERE i.`id` = ?;', item_id).first
+      item = db.xquery('SELECT i.*, te.id AS te_id, te.status AS te_status, seller.account_name AS seller_account_name, seller.num_sell_items AS seller_num_sell_items, buyer.account_name AS buyer_account_name, buyer.num_sell_items AS buyer_num_sell_items, s.status AS shipping_status FROM `items` i LEFT OUTER JOIN users seller ON i.seller_id = seller.id LEFT OUTER JOIN users buyer ON i.buyer_id = buyer.id LEFT OUTER JOIN transaction_evidences te ON i.id = te.item_id LEFT OUTER JOIN shippings s ON te.id = s.transaction_evidence_id WHERE i.`id` = ?;', item_id).first
       halt_with_error 404, 'item not found' if item.nil?
 
       category = get_category_by_id(item['category_id'])
@@ -500,15 +500,14 @@ module Isucari
         item_detail['buyer_id'] = item['buyer_id']
         item_detail['buyer'] = buyer
 
-        transaction_evidence = db.xquery('SELECT te.*, s.status as shipping_status FROM `transaction_evidences` te LEFT OUTER JOIN `shippings` s ON te.id = s.transaction_evidence_id WHERE te.`item_id` = ?', item['id']).first
-        unless transaction_evidence.nil?
-          if transaction_evidence['shipping_status'].nil?
+        unless item['te_id'].nil?
+          if item['shipping_status'].nil?
             halt_with_error 404, 'shipping not found'
           end
 
-          item_detail['transaction_evidence_id'] = transaction_evidence['id']
-          item_detail['transaction_evidence_status'] = transaction_evidence['status']
-          item_detail['shipping_status'] = transaction_evidence['shipping_status']
+          item_detail['transaction_evidence_id'] = item['te_id']
+          item_detail['transaction_evidence_status'] = item['te_status']
+          item_detail['shipping_status'] = item['shipping_status']
         end
       end
 
