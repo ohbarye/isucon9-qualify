@@ -1,7 +1,6 @@
 require 'json'
 require 'securerandom'
 require 'sinatra/base'
-require 'newrelic_rpm'
 require 'mysql2'
 require 'mysql2-cs-bind'
 require 'bcrypt'
