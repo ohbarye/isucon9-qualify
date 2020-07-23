@@ -641,20 +641,52 @@ module Isucari
 
       transaction_evidence_id = db.last_id
 
-      begin
-        scr = api_client.shipment_create(get_shipment_service_url, to_address: buyer['address'], to_name: buyer['account_name'], from_address: seller['address'], from_name: seller['account_name'])
-      rescue
-        db.query('ROLLBACK')
-        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
-        halt_with_error 500, 'failed to request to shipment service'
-      end
+      threads = []
 
-      begin
-        pstr = api_client.payment_token(get_payment_service_url, shop_id: PAYMENT_SERVICE_ISUCARI_SHOPID, token: token, api_key: PAYMENT_SERVICE_ISUCARI_APIKEY, price: target_item['price'])
-      rescue
-        db.query('ROLLBACK')
-        db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
-        halt_with_error 500, 'payment service is failed'
+      threads << Thread.new {
+        begin
+          scr = api_client.shipment_create(get_shipment_service_url, to_address: buyer['address'], to_name: buyer['account_name'], from_address: seller['address'], from_name: seller['account_name'])
+        rescue
+          # db.query('ROLLBACK')
+          # db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
+          # halt_with_error 500, 'failed to request to shipment service'
+        end
+        ['shipment', scr]
+      }
+
+      threads << Thread.new {
+        begin
+          pstr = api_client.payment_token(get_payment_service_url, shop_id: PAYMENT_SERVICE_ISUCARI_SHOPID, token: token, api_key: PAYMENT_SERVICE_ISUCARI_APIKEY, price: target_item['price'])
+        rescue
+          # db.query('ROLLBACK')
+          # db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
+          # halt_with_error 500, 'payment service is failed'
+        end
+        ['payment', pstr]
+      }
+
+      scr = nil
+      pstr = nil
+
+      threads.each do |t|
+        type, result = t.value
+        if type == 'shipment'
+          if result.nil?
+            db.query('ROLLBACK')
+            db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
+            halt_with_error 500, 'failed to request to shipment service'
+          else
+            scr = result
+          end
+        else
+          if result.nil?
+            db.query('ROLLBACK')
+            db.xquery('UPDATE `items` SET `buyer_id` = ?, `status` = ?, `updated_at` = ? WHERE `id` = ?', buyer['id'], ITEM_STATUS_ON_SALE, Time.now, target_item['id'])
+            halt_with_error 500, 'payment service is failed'
+          else
+            pstr = result
+          end
+        end
       end
 
       if pstr['status'] == 'invalid'
