@@ -457,7 +457,7 @@ module Isucari
 
       user = get_user
 
-      item = db.xquery('SELECT i.*, seller.account_name AS seller_account_name, seller.num_sell_items AS seller_num_sell_items, buyer.account_name AS buyer_account_name, buyer.num_sell_items AS buyer_num_sell_items FROM `items` i LEFT OUTER JOIN users seller ON i.seller_id = seller.id LEFT OUTER JOIN users buyer ON i.buyer_id = buyer.id WHERE i.`id` = 1;', item_id).first
+      item = db.xquery('SELECT i.*, seller.account_name AS seller_account_name, seller.num_sell_items AS seller_num_sell_items, buyer.account_name AS buyer_account_name, buyer.num_sell_items AS buyer_num_sell_items FROM `items` i LEFT OUTER JOIN users seller ON i.seller_id = seller.id LEFT OUTER JOIN users buyer ON i.buyer_id = buyer.id WHERE i.`id` = ?;', item_id).first
       halt_with_error 404, 'item not found' if item.nil?
 
       category = get_category_by_id(item['category_id'])
