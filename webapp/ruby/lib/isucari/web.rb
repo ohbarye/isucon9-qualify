@@ -306,13 +306,11 @@ module Isucari
       item_id = params['item_id'].to_i
       created_at = params['created_at'].to_i
 
-      db.query('BEGIN')
       items = if item_id > 0 && created_at > 0
         # paging
         begin
           db.xquery("SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND (`created_at` < ?  OR (`created_at` <= ? AND `id` < ?)) ORDER BY `created_at` DESC, `id` DESC LIMIT #{TRANSACTIONS_PER_PAGE + 1}", user['id'], user['id'], Time.at(created_at), Time.at(created_at), item_id)
         rescue
-          db.query('ROLLBACK')
           halt_with_error 500, 'db error'
         end
       else
@@ -320,7 +318,6 @@ module Isucari
         begin
           db.xquery("(SELECT * FROM `items` WHERE `seller_id` = ?) UNION (SELECT * FROM `items` WHERE `buyer_id` = ?) ORDER BY `created_at` DESC, `id` DESC LIMIT #{TRANSACTIONS_PER_PAGE + 1}", user['id'], user['id'])
         rescue
-          db.query('ROLLBACK')
           halt_with_error 500, 'db error'
         end
       end
@@ -335,13 +332,11 @@ module Isucari
       item_details = items.map do |item|
         seller = map[item['seller_id']]
         if seller.nil?
-          db.query('ROLLBACK')
           halt_with_error 404, 'seller not found'
         end
 
         category = get_category_by_id(item['category_id'])
         if category.nil?
-          db.query('ROLLBACK')
           halt_with_error 404, 'category not found'
         end
 
@@ -367,7 +362,6 @@ module Isucari
         if item['buyer_id'] != 0
           buyer = get_user_simple_by_id(item['buyer_id'])
           if buyer.nil?
-            db.query('ROLLBACK')
             halt_with_error 404, 'buyer not found'
           end
 
@@ -378,7 +372,6 @@ module Isucari
         transaction_evidence = te_map[item['id']]
         unless transaction_evidence.nil?
           if transaction_evidence['shipping_status'].nil?
-            db.query('ROLLBACK')
             halt_with_error 404, 'shipping not found'
           end
 
@@ -389,8 +382,6 @@ module Isucari
 
         item_detail
       end
-
-      db.query('COMMIT')
 
       has_next = false
       if item_details.length > TRANSACTIONS_PER_PAGE
